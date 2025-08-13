@@ -15,4 +15,4 @@ run:
     - name: PORT
       value: "8000"
     - name: WEATHER_API_KEY
-      value: "8f2b738b16def673a95c983760cc7caa"
+      value: "
