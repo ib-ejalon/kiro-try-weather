@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2d3436;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+        
+        select {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            background: white;
+        }
+        
+        select:disabled {
+            background: #f5f5f5;
+            color: #999;
+        }
+        
+        button {
+            padding: 15px 25px;
+            background: #0984e3;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        
+        button:hover:not(:disabled) { background: #74b9ff; }
+        button:disabled { 
+            background: #ddd; 
+            cursor: not-allowed; 
+        }
+        
+        .weather-card {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .weather-card.show { display: block; }
+        
+        .temp {
+            font-size: 4em;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        
+        .temp::after {
+            content: "°F";
+            font-size: 0.6em;
+        }
+        
+        .city {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        
+        .description {
+            font-size: 1.2em;
+            text-transform: capitalize;
+            margin-bottom: 20px;
+        }
+        
+        .details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .detail-item {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        .history {
+            margin-top: 30px;
+        }
+        
+        .history h3 {
+            color: #2d3436;
+            margin-bottom: 15px;
+        }
+        
+        .history-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .error {
+            background: #e17055;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #636e72;
+            display: none;
+        }
+        
+        .state-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .city-card {
+            background: linear-gradient(135deg, #fd79a8, #e84393);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .city-card h4 {
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .city-temp {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .state-facts {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .state-info-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #0984e3;
+        }
+        
+        .info-card h4 {
+            color: #2d3436;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .risk-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .fun-fact {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-style: italic;
+            margin-top: 15px;
+        }
+        
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .forecast-card {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .forecast-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .forecast-date {
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .forecast-icon {
+            font-size: 2.5em;
+            margin: 10px 0;
+        }
+        
+        .forecast-temps {
+            margin: 10px 0;
+        }
+        
+        .forecast-high {
+            font-size: 1.4em;
+            font-weight: bold;
+        }
+        
+        .forecast-low {
+            font-size: 1.1em;
+            opacity: 0.8;
+        }
+        
+        .forecast-desc {
+            font-size: 0.9em;
+            margin-top: 10px;
+            text-transform: capitalize;
+        }
+        
+        .forecast-details {
+            font-size: 0.8em;
+            margin-top: 10px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>�🇸 UaS States Weather Dashboard</h1>
+        
+        <div class="search-box">
+            <select id="stateSelect" onchange="loadCities()">
+                <option value="">Select a State...</option>
+            </select>
+            <select id="citySelect" disabled>
+                <option value="">Select a City...</option>
+            </select>
+            <button onclick="searchWeather()" id="searchBtn" disabled>Get Weather</button>
+        </div>
+        
+        <div class="quick-actions">
+            <button onclick="getStateOverview()" id="overviewBtn" disabled>State Overview</button>
+            <button onclick="getStateInfo()" id="stateInfoBtn" disabled>State Facts</button>
+            <button onclick="getForecast()" id="forecastBtn" disabled>7-Day Forecast</button>
+            <button onclick="getRandomCity()">Random City</button>
+        </div>
+        
+        <div class="error" id="errorMsg"></div>
+        <div class="loading" id="loading">🔄 Loading weather data...</div>
+        
+        <div class="weather-card" id="weatherCard">
+            <div class="city" id="cityName"></div>
+            <div class="temp" id="temperature"></div>
+            <div class="description" id="description"></div>
+            
+            <div class="details">
+                <div class="detail-item">
+                    <strong>Feels like</strong><br>
+                    <span id="feelsLike"></span>°F
+                </div>
+                <div class="detail-item">
+                    <strong>Humidity</strong><br>
+                    <span id="humidity"></span>%
+                </div>
+                <div class="detail-item">
+                    <strong>Wind Speed</strong><br>
+                    <span id="windSpeed"></span> mph
+                </div>
+                <div class="detail-item">
+                    <strong>Pressure</strong><br>
+                    <span id="pressure"></span> hPa
+                </div>
+                <div class="detail-item">
+                    <strong>Local Time</strong><br>
+                    <span id="localTime"></span>
+                </div>
+                <div class="detail-item" id="tornadoRisk">
+                    <strong>🌪️ Tornado Risk</strong><br>
+                    <span id="tornadoLevel"></span>
+                </div>
+                <div class="detail-item" id="hurricaneRisk">
+                    <strong>🌀 Hurricane Risk</strong><br>
+                    <span id="hurricaneLevel"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="stateOverview" style="display: none;">
+            <h3 id="overviewTitle">State Weather Overview</h3>
+            <div id="stateFactsBox" class="state-facts" style="display: none;"></div>
+            <div id="overviewGrid" class="state-overview"></div>
+        </div>
+        
+        <div id="stateInfoPanel" style="display: none;">
+            <h3 id="stateInfoTitle">State Information</h3>
+            <div id="stateInfoContent" class="state-info-content"></div>
+        </div>
+        
+        <div id="forecastPanel" style="display: none;">
+            <h3 id="forecastTitle">7-Day Weather Forecast</h3>
+            <div id="forecastGrid" class="forecast-grid"></div>
+        </div>
+        
+        <div class="history">
+            <h3>Recent Searches</h3>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        let statesData = {};
+        
+        async function loadStates() {
+            try {
+                const response = await fetch('/api/states');
+                statesData = await response.json();
+                
+                const stateSelect = document.getElementById('stateSelect');
+                Object.keys(statesData).sort().forEach(state => {
+                    const option = document.createElement('option');
+                    option.value = state;
+                    option.textContent = state;
+                    stateSelect.appendChild(option);
+                });
+            } catch (error) {
+                showError('Failed to load states data');
+            }
+        }
+        
+        function loadCities() {
+            const stateSelect = document.getElementById('stateSelect');
+            const citySelect = document.getElementById('citySelect');
+            const searchBtn = document.getElementById('searchBtn');
+            const overviewBtn = document.getElementById('overviewBtn');
+            
+            const selectedState = stateSelect.value;
+            
+            // Clear cities
+            citySelect.innerHTML = '<option value="">Select a City...</option>';
+            
+            if (selectedState && statesData[selectedState]) {
+                citySelect.disabled = false;
+                overviewBtn.disabled = false;
+                document.getElementById('stateInfoBtn').disabled = false;
+                document.getElementById('forecastBtn').disabled = false;
+                
+                statesData[selectedState].forEach(city => {
+                    const option = document.createElement('option');
+                    option.value = city;
+                    option.textContent = city;
+                    citySelect.appendChild(option);
+                });
+            } else {
+                citySelect.disabled = true;
+                searchBtn.disabled = true;
+                overviewBtn.disabled = true;
+                document.getElementById('stateInfoBtn').disabled = true;
+                document.getElementById('forecastBtn').disabled = true;
+            }
+            
+            // Hide overview, info, and forecast when state changes
+            document.getElementById('stateOverview').style.display = 'none';
+            document.getElementById('stateInfoPanel').style.display = 'none';
+            document.getElementById('forecastPanel').style.display = 'none';
+        }
+        
+        function enableSearch() {
+            const citySelect = document.getElementById('citySelect');
+            const searchBtn = document.getElementById('searchBtn');
+            const forecastBtn = document.getElementById('forecastBtn');
+            
+            const hasCity = !!citySelect.value;
+            searchBtn.disabled = !hasCity;
+            
+            // Enable forecast button only if city is selected
+            if (hasCity) {
+                forecastBtn.disabled = false;
+            }
+        }
+        
+        async function searchWeather() {
+            const state = document.getElementById('stateSelect').value;
+            const city = document.getElementById('citySelect').value;
+            
+            if (!state || !city) return;
+            
+            showLoading(true);
+            hideError();
+            hideOverview();
+            hideStateInfo();
+            hideForecast();
+            
+            try {
+                const response = await fetch(`/api/weather/${encodeURIComponent(state)}/${encodeURIComponent(city)}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayWeather(data);
+                    loadHistory();
+                } else {
+                    showError(data.error || 'Failed to fetch weather data');
+                }
+            } catch (error) {
+                showError('Network error. Please try again.');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function getStateOverview() {
+            const state = document.getElementById('stateSelect').value;
+            if (!state) return;
+            
+            showLoading(true);
+            hideError();
+            document.getElementById('weatherCard').classList.remove('show');
+            hideStateInfo();
+            hideForecast();
+            
+            try {
+                const response = await fetch(`/api/weather/state/${encodeURIComponent(state)}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayStateOverview(data);
+                } else {
+                    showError(data.error || 'Failed to fetch state overview');
+                }
+            } catch (error) {
+                showError('Network error. Please try again.');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function getStateInfo() {
+            const state = document.getElementById('stateSelect').value;
+            if (!state) return;
+            
+            showLoading(true);
+            hideError();
+            hideOverview();
+            document.getElementById('weatherCard').classList.remove('show');
+            hideForecast();
+            
+            try {
+                const response = await fetch(`/api/state-info/${encodeURIComponent(state)}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayStateInfo(data, state);
+                } else {
+                    showError(data.error || 'Failed to fetch state information');
+                }
+            } catch (error) {
+                showError('Network error. Please try again.');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function getForecast() {
+            const state = document.getElementById('stateSelect').value;
+            const city = document.getElementById('citySelect').value;
+            
+            if (!state || !city) return;
+            
+            showLoading(true);
+            hideError();
+            hideOverview();
+            hideStateInfo();
+            document.getElementById('weatherCard').classList.remove('show');
+            
+            try {
+                const response = await fetch(`/api/forecast/${encodeURIComponent(state)}/${encodeURIComponent(city)}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayForecast(data);
+                } else {
+                    showError(data.error || 'Failed to fetch forecast data');
+                }
+            } catch (error) {
+                showError('Network error. Please try again.');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function getRandomCity() {
+            const states = Object.keys(statesData);
+            const randomState = states[Math.floor(Math.random() * states.length)];
+            const cities = statesData[randomState];
+            const randomCity = cities[Math.floor(Math.random() * cities.length)];
+            
+            document.getElementById('stateSelect').value = randomState;
+            loadCities();
+            document.getElementById('citySelect').value = randomCity;
+            enableSearch();
+            
+            await searchWeather();
+        }
+        
+        function displayWeather(data) {
+            document.getElementById('cityName').textContent = `${data.city}, ${data.state} (${data.nickname})`;
+            document.getElementById('temperature').textContent = data.temperature;
+            document.getElementById('description').textContent = data.description;
+            document.getElementById('feelsLike').textContent = data.feels_like;
+            document.getElementById('humidity').textContent = data.humidity;
+            document.getElementById('windSpeed').textContent = data.wind_speed;
+            document.getElementById('pressure').textContent = data.pressure;
+            document.getElementById('localTime').textContent = data.local_time;
+            document.getElementById('tornadoLevel').textContent = data.tornado_risk;
+            document.getElementById('hurricaneLevel').textContent = data.hurricane_risk;
+            
+            // Set risk colors
+            document.getElementById('tornadoRisk').style.backgroundColor = data.tornado_color;
+            document.getElementById('hurricaneRisk').style.backgroundColor = data.hurricane_color;
+            
+            document.getElementById('weatherCard').classList.add('show');
+        }
+        
+        function displayStateOverview(data) {
+            document.getElementById('overviewTitle').textContent = `${data.state} Weather Overview`;
+            
+            // Show state facts if available
+            if (data.state_info) {
+                const factsBox = document.getElementById('stateFactsBox');
+                factsBox.innerHTML = `
+                    <h4>${data.state} - "${data.state_info.nickname}"</h4>
+                    <p><strong>Local Time:</strong> ${data.state_info.local_time}</p>
+                    <div style="margin: 10px 0;">
+                        <span class="risk-indicator" style="background-color: ${data.state_info.tornado_color};">
+                            🌪️ Tornado: ${data.state_info.tornado_risk}
+                        </span>
+                        <span class="risk-indicator" style="background-color: ${data.state_info.hurricane_color}; margin-left: 10px;">
+                            🌀 Hurricane: ${data.state_info.hurricane_risk}
+                        </span>
+                    </div>
+                `;
+                factsBox.style.display = 'block';
+            }
+            
+            const grid = document.getElementById('overviewGrid');
+            grid.innerHTML = '';
+            
+            data.cities.forEach(city => {
+                const cityCard = document.createElement('div');
+                cityCard.className = 'city-card';
+                cityCard.innerHTML = `
+                    <h4>${city.city}</h4>
+                    <div class="city-temp">${city.temperature}°F</div>
+                    <div>${city.description}</div>
+                `;
+                grid.appendChild(cityCard);
+            });
+            
+            document.getElementById('stateOverview').style.display = 'block';
+        }
+        
+        function displayStateInfo(data, stateName) {
+            document.getElementById('stateInfoTitle').textContent = `${stateName} - "${data.nickname}"`;
+            
+            const content = document.getElementById('stateInfoContent');
+            content.innerHTML = `
+                <div class="info-card">
+                    <h4>🕐 Time Zone</h4>
+                    <p><strong>Zone:</strong> ${data.timezone}</p>
+                    <p><strong>Current Time:</strong> ${data.local_time}</p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>🌪️ Tornado Risk</h4>
+                    <span class="risk-indicator" style="background-color: ${data.tornado_color};">
+                        ${data.tornado_risk}
+                    </span>
+                    <p style="margin-top: 10px; font-size: 0.9em;">
+                        ${getTornadoInfo(data.tornado_risk)}
+                    </p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>🌀 Hurricane Risk</h4>
+                    <span class="risk-indicator" style="background-color: ${data.hurricane_color};">
+                        ${data.hurricane_risk}
+                    </span>
+                    <p style="margin-top: 10px; font-size: 0.9em;">
+                        ${getHurricaneInfo(data.hurricane_risk)}
+                    </p>
+                </div>
+                
+                <div class="info-card">
+                    <h4>🏙️ Major Cities</h4>
+                    <p>${data.cities.join(', ')}</p>
+                </div>
+                
+                <div class="fun-fact">
+                    <h4>💡 Fun Fact</h4>
+                    <p>${data.fun_fact}</p>
+                </div>
+            `;
+            
+            document.getElementById('stateInfoPanel').style.display = 'block';
+        }
+        
+        function getTornadoInfo(risk) {
+            const info = {
+                'Very Low': 'Tornadoes are extremely rare in this area.',
+                'Low': 'Occasional weak tornadoes may occur.',
+                'Moderate': 'Tornadoes occur regularly during storm season.',
+                'High': 'Frequent tornado activity, especially in spring.',
+                'Very High': 'Part of "Tornado Alley" with frequent severe tornadoes.'
+            };
+            return info[risk] || 'Tornado risk information not available.';
+        }
+        
+        function getHurricaneInfo(risk) {
+            const info = {
+                'Very Low': 'Hurricanes do not typically affect this area.',
+                'Low': 'Rare hurricane impacts, mostly from weakened storms.',
+                'Moderate': 'Occasional hurricane impacts from coastal storms.',
+                'High': 'Regular hurricane threats during Atlantic season.',
+                'Very High': 'Frequent hurricane landfalls and major storm impacts.'
+            };
+            return info[risk] || 'Hurricane risk information not available.';
+        }
+        
+        function hideOverview() {
+            document.getElementById('stateOverview').style.display = 'none';
+            document.getElementById('stateFactsBox').style.display = 'none';
+        }
+        
+        function displayForecast(data) {
+            document.getElementById('forecastTitle').textContent = `7-Day Forecast for ${data.city}, ${data.state}`;
+            
+            const grid = document.getElementById('forecastGrid');
+            grid.innerHTML = '';
+            
+            data.forecasts.forEach((forecast, index) => {
+                const forecastCard = document.createElement('div');
+                forecastCard.className = 'forecast-card';
+                
+                const dayLabel = index === 0 ? 'Today' : forecast.date;
+                
+                forecastCard.innerHTML = `
+                    <div class="forecast-date">${dayLabel}</div>
+                    <div class="forecast-icon">
+                        ${getWeatherEmoji(forecast.icon)}
+                    </div>
+                    <div class="forecast-temps">
+                        <div class="forecast-high">${forecast.max_temp}°F</div>
+                        <div class="forecast-low">${forecast.min_temp}°F</div>
+                    </div>
+                    <div class="forecast-desc">${forecast.description}</div>
+                    <div class="forecast-details">
+                        💧 ${forecast.humidity}% | 💨 ${forecast.wind_speed} mph
+                    </div>
+                `;
+                grid.appendChild(forecastCard);
+            });
+            
+            document.getElementById('forecastPanel').style.display = 'block';
+        }
+        
+        function getWeatherEmoji(iconCode) {
+            const iconMap = {
+                '01d': '☀️', '01n': '🌙',
+                '02d': '⛅', '02n': '☁️',
+                '03d': '☁️', '03n': '☁️',
+                '04d': '☁️', '04n': '☁️',
+                '09d': '🌧️', '09n': '🌧️',
+                '10d': '🌦️', '10n': '🌧️',
+                '11d': '⛈️', '11n': '⛈️',
+                '13d': '❄️', '13n': '❄️',
+                '50d': '🌫️', '50n': '🌫️'
+            };
+            return iconMap[iconCode] || '🌤️';
+        }
+        
+        function hideStateInfo() {
+            document.getElementById('stateInfoPanel').style.display = 'none';
+        }
+        
+        function hideForecast() {
+            document.getElementById('forecastPanel').style.display = 'none';
+        }
+        
+        async function loadHistory() {
+            try {
+                const response = await fetch('/api/history');
+                const history = await response.json();
+                
+                const historyList = document.getElementById('historyList');
+                historyList.innerHTML = '';
+                
+                history.reverse().forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'history-item';
+                    div.innerHTML = `
+                        <span>${item.city}, ${item.state} - ${item.temperature}°F</span>
+                        <small>${new Date(item.timestamp).toLocaleTimeString()}</small>
+                    `;
+                    historyList.appendChild(div);
+                });
+            } catch (error) {
+                console.error('Failed to load history:', error);
+            }
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMsg');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        function hideError() {
+            document.getElementById('errorMsg').style.display = 'none';
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+        
+        // Enable search button when city is selected
+        document.getElementById('citySelect').addEventListener('change', enableSearch);
+        
+        // Load states and history on page load
+        loadStates();
+        loadHistory();
+    </script>
+</body>
+</html>

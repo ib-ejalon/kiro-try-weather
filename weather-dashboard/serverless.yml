@@ -1,0 +1,27 @@
+service: us-weather-dashboard
+
+provider:
+  name: aws
+  runtime: python3.11
+  region: us-east-1
+  environment:
+    WEATHER_API_KEY: ${env:WEATHER_API_KEY}
+
+functions:
+  app:
+    handler: wsgi_handler.handler
+    events:
+      - http: ANY /
+      - http: 'ANY /{proxy+}'
+    timeout: 30
+
+plugins:
+  - serverless-wsgi
+  - serverless-python-requirements
+
+custom:
+  wsgi:
+    app: app.app
+    packRequirements: false
+  pythonRequirements:
+    dockerizePip: non-linux
